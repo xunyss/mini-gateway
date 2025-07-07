@@ -20,7 +20,8 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
-	
+	implementation("com.google.code.gson:gson:2.11.0")
+
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

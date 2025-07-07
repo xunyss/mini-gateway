@@ -1,6 +1,10 @@
 package io.xunyss.minigateway;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,10 +17,16 @@ import java.util.Enumeration;
 @RestController
 public class ApiController {
 
+	private final Gson gson = new GsonBuilder()
+			.setPrettyPrinting()  // 들여쓰기와 줄바꿈 적용
+			.create();
+
+	private final String apiHost;
 	private final WebClient webClient;
 
-	public ApiController() {
-		this.webClient = WebClient.create("https://api.fireworks.ai");
+	public ApiController(@Value("${api.host}") String apiHost) {
+		this.apiHost = apiHost;
+		this.webClient = WebClient.create(apiHost);
 	}
 
 	@RequestMapping("/**")
@@ -49,13 +59,36 @@ public class ApiController {
 			finalRequest = requestSpec;
 		}
 
+		log("REQUEST >> " + apiHost + request.getRequestURI());
+		log(format(body));
+
 		// 요청 실행 및 응답 반환
-		return finalRequest
+		ResponseEntity<String> responseEntity = finalRequest
 				.exchangeToMono(response -> response.bodyToMono(String.class)
 						.map(responseBody -> ResponseEntity
 								.status(response.statusCode())
 								.headers(headers -> headers.addAll(response.headers().asHttpHeaders()))
 								.body(responseBody)))
 				.block();
+
+		if (responseEntity != null) {
+			log("RESPONSE >> " + responseEntity.getStatusCode());
+			log(format(responseEntity.getBody()));
+		}
+		return responseEntity;
+	}
+
+
+	private void log(Object o) {
+		System.out.println(o);
+	}
+
+	private String format(String json) {
+		try {
+			return gson.toJson(gson.fromJson(json, Object.class));
+		}
+		catch (JsonParseException e) {
+			return json;
+		}
 	}
 }
