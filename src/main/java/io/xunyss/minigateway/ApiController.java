@@ -3,8 +3,8 @@ package io.xunyss.minigateway;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
+import java.util.Set;
 
 @RestController
 public class ApiController {
@@ -21,13 +23,20 @@ public class ApiController {
 			.setPrettyPrinting()  // 들여쓰기와 줄바꿈 적용
 			.create();
 
-	private final String apiHost;
+	private final String baseUrl;
 	private final WebClient webClient;
 
-	public ApiController(@Value("${api.host}") String apiHost) {
-		this.apiHost = apiHost;
-		this.webClient = WebClient.create(apiHost);
+	public ApiController(@Value("${api.baseUrl}") String baseUrl) {
+		this.baseUrl = baseUrl;
+		this.webClient = WebClient.create(baseUrl);
 	}
+
+	// Tomcat 에서 최종 response 에 "Connection" 에더가 "keep-alive, keep-alive" 로 변경되고, "Transfer-Encoding" 헤어가 한번 더 붙는 현상 발생
+	// Jetty server 로 변경 (build.gradle.kts)
+	// Jetty server 에서도 최종 response 에 "Date" 헤더를 한번 더 붙이는 현상 있음
+	private static final Set<String> excludeHeaders =
+			Set.of(HttpHeaders.DATE);
+
 
 	@RequestMapping("/**")
 	public ResponseEntity<String> index(HttpServletRequest request, @RequestBody String body) {
@@ -59,7 +68,7 @@ public class ApiController {
 			finalRequest = requestSpec;
 		}
 
-		log("REQUEST >> " + apiHost + request.getRequestURI());
+		log("REQUEST >> " + baseUrl + request.getRequestURI());
 		log(format(body));
 
 		// 요청 실행 및 응답 반환
@@ -67,7 +76,12 @@ public class ApiController {
 				.exchangeToMono(response -> response.bodyToMono(String.class)
 						.map(responseBody -> ResponseEntity
 								.status(response.statusCode())
-								.headers(headers -> headers.addAll(response.headers().asHttpHeaders()))
+//								.headers(headers -> headers.addAll(response.headers().asHttpHeaders()))
+								.headers(httpHeaders -> response.headers().asHttpHeaders().forEach((headerName, headerValues) -> {
+                                    if (!excludeHeaders.contains(headerName)) {
+                                        httpHeaders.put(headerName, headerValues);
+                                    }
+                                }))
 								.body(responseBody)))
 				.block();
 

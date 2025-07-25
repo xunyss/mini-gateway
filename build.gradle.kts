@@ -1,7 +1,7 @@
 plugins {
 	java
-	id("org.springframework.boot") version "3.5.3"
-	id("io.spring.dependency-management") version "1.1.7"
+	id("org.springframework.boot") version "2.7.18"
+	id("io.spring.dependency-management") version "1.0.15.RELEASE"
 }
 
 group = "io.xunyss"
@@ -9,7 +9,7 @@ version = "0.0.1-SNAPSHOT"
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(11)
 	}
 }
 
@@ -18,9 +18,12 @@ repositories {
 }
 
 dependencies {
-	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter-web") {
+		exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
+	}
+	implementation("org.springframework.boot:spring-boot-starter-jetty")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
-	implementation("com.google.code.gson:gson:2.11.0")
+	implementation("com.google.code.gson:gson")
 
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
