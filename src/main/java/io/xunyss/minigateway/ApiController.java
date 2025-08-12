@@ -3,6 +3,7 @@ package io.xunyss.minigateway;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
+import com.google.gson.ToNumberPolicy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -20,6 +21,7 @@ import java.util.Set;
 public class ApiController {
 
 	private final Gson gson = new GsonBuilder()
+            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)   // 20250810. 정수가 float 으로 변경되는 문제 조치
 			.setPrettyPrinting()  // 들여쓰기와 줄바꿈 적용
 			.create();
 
