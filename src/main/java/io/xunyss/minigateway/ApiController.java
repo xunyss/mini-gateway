@@ -100,6 +100,8 @@ public class ApiController {
 	}
 
 	private String format(String json) {
+        // FIXME: LLM client 에서 "stream" 으로 요청 시, exception 발생
+        // TODO: http stream 분석
 		try {
 			return gson.toJson(gson.fromJson(json, Object.class));
 		}
